@@ -32,22 +32,41 @@ def simple_app(environ, start_response):
         @param start_response: Функция, которая должна быть вызвана для отправки ответа (статус и заголовки).
         @return: Итератор байтов, содержащий тело ответа.
     """
-    request_method = environ.get('REQUEST_METHOD', 'GET')
-    path = environ.get('PATH_INFO', '/')
+    request_method = environ['REQUEST_METHOD']
+    path = environ['PATH_INFO']
 
     if path == '/':
-        response_body = b"Hello, WSGI World!"
+        # print(environ)
+        response_body = b"Hello, WSGI World!\n"
         status = '200 OK'
 
     elif path == '/get_people' and request_method == 'GET':
         with open(csv_file_path, 'r') as csvfile:
             people = list(csv.DictReader(csvfile))
-        response_body = json.dumps(people).encode('utf-8')
+        # Сериализуем Python-объект (список словарей) в строку формата JSON
+        response_body_json = json.dumps(people)
+
+        # Кодируем JSON-строку в байты с использованием кодировки UTF-8
+        response_body = response_body_json.encode('utf-8')
+
         status = '200 OK'
 
     elif path == '/add_person' and request_method == 'POST':
-        request_body = environ['wsgi.input'].read(int(environ.get('CONTENT_LENGTH', 0)))
-        data = json.loads(request_body.decode('utf-8'))
+        # Получаем длину тела запроса в байтах из заголовка CONTENT_LENGTH
+        content_length = int(environ['CONTENT_LENGTH'])
+        print(f'{content_length=}')
+
+        # Читаем указанное количество байтов из потока wsgi.input
+        request_body = environ['wsgi.input'].read(content_length)
+        print(f'{request_body=}, {type(request_body)=}')
+        
+
+        decoded_request_body = request_body.decode('utf-8')
+        print(f'{decoded_request_body=}, {type(decoded_request_body)=}')
+
+        data = json.loads(decoded_request_body)
+        print(f'{data=}, {type(data)=}')
+
         with open(csv_file_path, 'a', newline='') as csvfile:
             csvwriter = csv.DictWriter(csvfile, fieldnames=['name', 'city', 'age'])
             csvwriter.writerow(data)
@@ -58,7 +77,7 @@ def simple_app(environ, start_response):
         response_body = b"Not Found"
         status = '404 Not Found'
 
-    headers = [('Custom-Header', 'foo-bar')]
+    headers = [('Content-type', 'text/plain; charset=utf-8'), ('Custom-Header', 'foo-bar')]
     start_response(status, headers)
     return [response_body]
 
