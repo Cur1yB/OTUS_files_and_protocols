@@ -1,82 +1,162 @@
-# Импорт необходимых модулей
 import os
-from functools import partial
-from termcolor import colored
+import logging
 
-os.system('clear')
+# Настройка логгера
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger()
 
-# Функция для цветного вывода
-def print_color(message, color):
-    print(colored(message, color))
+def clear_terminal():
+    """
+    Очищает терминал.
+    """
+    os.system('clear')
 
-# Создание новых функций для цветного вывода
-print_green = partial(print_color, color='green')
 
-# Определяем путь к файлу
-file_path = 'example.txt'
+def create_and_write_file(file_path):
+    """
+    Создает файл и записывает в него данные.
 
-# Проверяем, существует ли файл, и удаляем его, если он существует
-if os.path.exists(file_path):
-    os.remove(file_path)
+    Args:
+        file_path (str): Путь к создаваемому файлу.
+    """
+    with open(file_path, 'w') as file:
+        file.write("Hello, world!\n")
+        file.write("This is a test file.\n")
+    logger.info(f"Файл '{file_path}' создан и записан.")
 
-# Создаем и записываем данные в файл
-with open(file_path, 'w') as file:
-    file.write("Hello, world!\n")
-    file.write("This is a test file.\n")
 
-print_green("Файл создан и записан.")
+def read_file(file_path):
+    """
+    Считывает и выводит содержимое файла.
 
-# Выводим содержимое файла для проверки
-with open(file_path, 'r') as file:
-    content = file.read()
-    print_green("Содержимое файла после записи:")
-    print(content)
+    Args:
+        file_path (str): Путь к файлу для чтения.
+    """
+    with open(file_path, 'r') as file:
+        content = file.read()
+        logger.info(f"Содержимое файла '{file_path}':\n{content}")
 
-'''Чтение файла'''
+def safe_read_file(file_path):
+    """
+    Безопасно считывает содержимое файла, обрабатывая возможные ошибки.
 
-# Чтение всего файла
-with open(file_path, 'r') as file:
-    content = file.read()
-    print_green("Содержимое всего файла:")
-    print(content)
+    Args:
+        file_path (str): Путь к файлу для чтения.
+    """
+    try:
+        with open(file_path, 'r') as file:
+            content = file.read()
+            logger.info(f"Содержимое файла '{file_path}':\n{content}")
+    except FileNotFoundError:
+        logger.error(f"Файл '{file_path}' не найден.")
+    except PermissionError:
+        logger.error(f"Нет доступа к файлу '{file_path}'.")
+    except Exception as e:
+        logger.error(f"Произошла ошибка при чтении файла '{file_path}': {e}")
 
-# Чтение файла построчно с помощью цикла
-with open(file_path, 'r') as file:
-    print_green("Чтение файла построчно:")
-    for line in file:
-        print(line.strip())
 
-# Чтение файла построчно с использованием readline()
-with open(file_path, 'r') as file:
-    print_green("Чтение файла построчно с помощью readline():")
-    line = file.readline()
-    while line:
-        print(line.strip())
+def read_file_line_by_line(file_path):
+    """
+    Читает файл построчно с помощью цикла.
+
+    Args:
+        file_path (str): Путь к файлу для чтения.
+    """
+    with open(file_path, 'r') as file:
+        logger.info(f"Чтение файла '{file_path}' построчно:")
+        for line in file:
+            logger.info(line.strip())
+
+
+def read_file_with_readline(file_path):
+    """
+    Читает файл построчно с использованием readline().
+
+    Args:
+        file_path (str): Путь к файлу для чтения.
+    """
+    with open(file_path, 'r') as file:
+        logger.info(f"Чтение файла '{file_path}' с помощью readline():")
         line = file.readline()
+        while line:
+            logger.info(line.strip())
+            line = file.readline()
 
-'''Дополнение файла'''
 
-# Дополнение файла
-with open(file_path, 'a') as file:
-    file.write("Appending new line.\n")
+def append_to_file(file_path):
+    """
+    Дополняет файл новой строкой.
 
-print_green("Файл дополнен.")
+    Args:
+        file_path (str): Путь к файлу для дополнения.
+    """
+    with open(file_path, 'a') as file:
+        file.write("Appending new line.\n")
+    logger.info(f"Файл '{file_path}' дополнен новой строкой.")
 
-# Выводим обновленное содержимое файла для проверки
-with open(file_path, 'r') as file:
-    content = file.read()
-    print_green("Содержимое файла после дополнения:")
-    print(content)
 
-'''Работа с большими файлами'''
+def read_file_in_chunks(file_path, chunk_size=3):
+    """
+    Генератор для чтения файла частями.
 
-# Генератор для чтения файла частями
-def read_file_in_chunks(file_name, chunk_size=1024):
-    with open(file_name, 'r') as file:
+    Args:
+        file_path (str): Путь к файлу для чтения.
+        chunk_size (int): Размер части для чтения.
+
+    Yields:
+        str: Часть содержимого файла.
+    """
+    with open(file_path, 'r') as file:
         while chunk := file.read(chunk_size):
             yield chunk
 
-# Использование генератора для чтения файла частями
-print_green("Чтение файла частями:")
-for chunk in read_file_in_chunks(file_path):
-    print(chunk.strip())
+
+def read_large_file_in_chunks(file_path, chunk_size=3):
+    """
+    Читает файл частями, используя генератор.
+
+    Args:
+        file_path (str): Путь к файлу для чтения.
+        chunk_size (int): Размер части для чтения.
+    """
+    logger.info(f"Чтение файла '{file_path}' частями (chunk_size={chunk_size}):")
+    for chunk in read_file_in_chunks(file_path, chunk_size):
+        logger.info(chunk.strip())
+
+
+if __name__ == "__main__":
+    clear_terminal()
+
+    # Путь к файлу
+    file_path = 'example.txt'
+
+    # Проверяем, существует ли файл, и удаляем его, если он существует
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        logger.info(f"Файл '{file_path}' удален.")
+
+    # Создание и запись данных в файл
+    create_and_write_file(file_path)
+
+    # Чтение файла полностью
+    read_file(file_path)
+
+    # Чтение файла с обработкой исключений
+    safe_read_file(file_path)
+
+    # Чтение файла построчно
+    read_file_line_by_line(file_path)
+
+    # Чтение файла построчно с использованием readline()
+    read_file_with_readline(file_path)
+
+    # Дополнение файла
+    append_to_file(file_path)
+
+    # Чтение дополненного файла
+    read_file(file_path)
+
+    # Чтение файла частями
+    read_large_file_in_chunks(file_path, chunk_size=5)
